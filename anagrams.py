@@ -10,14 +10,33 @@ for an arbitrary list of strings.
 
 # Your name here, and any other people/sources who helped.
 # Give credit where credit is due.
-__author__ = "???"
+__author__ = "Andrew Fillenwarth"
 
 import sys
+import cProfile
+import io
+import pstats
 
 
-def alphabetize(string):
-    """Returns alphabetized version of the string."""
-    return "".join(sorted(string.lower()))
+def profile(func):
+    """A cProfile decorator function that can be used to
+    measure performance.
+    """
+    # Profiler to profile main()
+    # This profiling decorator was adapted from the Python 3.6 Docs
+    def inner(*args, **kwargs):
+        pr = cProfile.Profile()
+        pr.enable()
+        retval = func(*args, **kwargs)
+        pr.disable()
+        string = io.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=string).sort_stats(sortby)
+        ps.print_stats()
+        print(string.getvalue())
+        return retval
+
+    return inner
 
 
 def find_anagrams(words):
@@ -27,14 +46,17 @@ def find_anagrams(words):
     Example:
     {'dgo': ['dog'], 'act': ['cat', 'act']}
     """
-    anagrams = {
-        alphabetize(word): [
-            w for w in words
-            if alphabetize(w) == alphabetize(word)]
-        for word in words}
-    return anagrams
+    anagrams2 = {}
+    for word in words:
+        anagrams2.setdefault("".join(sorted(word)), [])
+    for word in words:
+        vari = "".join(sorted(word))
+        if vari in anagrams2:
+            anagrams2[vari].append(word)
+    return anagrams2
 
 
+# @profile
 def main(args):
     # run find_anagrams() on first argument filename
     if len(args) < 1:
